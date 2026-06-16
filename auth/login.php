@@ -18,13 +18,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_email']   = $user['email'];
             $_SESSION['user_role']    = $user['role'];
             $_SESSION['user_company'] = $user['company'];
-            flash('success', 'Welcome back, ' . $user['name'] . '!');
+            flash('success', 'კეთილი იყოს თქვენი დაბრუნება, ' . $user['name'] . '!');
             redirect('/index.php');
         } else {
-            $error = 'Invalid email or password.';
+            $error = 'არასწორი ელ-ფოსტა ან პაროლი.';
         }
     } else {
-        $error = 'Please fill in all fields.';
+        $error = 'გთხოვთ შეავსოთ ყველა ველი.';
     }
 }
 ?>
@@ -35,24 +35,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="card-body p-4">
     <div class="text-center mb-4">
         <i class="bi bi-box-seam-fill display-5 text-primary"></i>
-        <h3 class="mt-2">Sign In</h3>
+        <h3 class="mt-2">შესვლა</h3>
     </div>
     <?php if ($error): ?>
     <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
     <form method="POST">
         <div class="mb-3">
-            <label class="form-label fw-semibold">Email</label>
+            <label class="form-label fw-semibold">ელ-ფოსტა</label>
             <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required autofocus>
         </div>
         <div class="mb-4">
-            <label class="form-label fw-semibold">Password</label>
+            <label class="form-label fw-semibold">პაროლი</label>
             <input type="password" name="password" class="form-control" required>
         </div>
-        <button type="submit" class="btn btn-primary w-100 py-2">Login</button>
+        <button type="submit" class="btn btn-primary w-100 py-2">შესვლა</button>
     </form>
     <hr>
-    <p class="text-center mb-0 text-muted">Don't have an account? <a href="/auth/register.php">Register</a></p>
+    <p class="text-center mb-0 text-muted">ანგარიში არ გაქვთ? <a href="/auth/register.php">რეგისტრაცია</a></p>
 </div>
 </div>
 </div>

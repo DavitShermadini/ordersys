@@ -10,7 +10,7 @@ $stmt->execute([$id, $uid]);
 $order = $stmt->fetch();
 
 if (!$order) {
-    flash('danger', 'Order not found.');
+    flash('danger', 'შეკვეთა ვერ მოიძებნა.');
     redirect('/orders/index.php');
 }
 
@@ -27,9 +27,9 @@ $items = $stmt->fetchAll();
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <a href="/orders/index.php" class="text-muted small d-block mb-1">
-            <i class="bi bi-arrow-left me-1"></i>Back to Orders
+            <i class="bi bi-arrow-left me-1"></i>შეკვეთებზე დაბრუნება
         </a>
-        <h2 class="mb-0">Order #<?= $order['id'] ?></h2>
+        <h2 class="mb-0">შეკვეთა #<?= $order['id'] ?></h2>
     </div>
     <?= statusBadge($order['status']) ?>
 </div>
@@ -37,31 +37,31 @@ $items = $stmt->fetchAll();
 <div class="row g-4">
     <div class="col-md-8">
         <div class="card shadow-sm">
-            <div class="card-header fw-semibold">Order Items</div>
+            <div class="card-header fw-semibold">შეკვეთის პოზიციები</div>
             <div class="card-body p-0">
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>Product</th>
-                            <th class="text-center">Qty</th>
-                            <th class="text-end">Unit Price</th>
-                            <th class="text-end">Total</th>
+                            <th>პროდუქტი</th>
+                            <th class="text-center">რაოდ.</th>
+                            <th class="text-end">ფასი</th>
+                            <th class="text-end">სულ</th>
                         </tr>
                     </thead>
                     <tbody>
                     <?php foreach ($items as $item): ?>
                     <tr>
-                        <td><?= htmlspecialchars($item['product_name'] ?? 'Deleted product') ?></td>
+                        <td><?= htmlspecialchars($item['product_name'] ?? 'წაშლილი პროდუქტი') ?></td>
                         <td class="text-center"><?= $item['quantity'] ?></td>
-                        <td class="text-end">$<?= number_format($item['price'], 2) ?></td>
-                        <td class="text-end fw-semibold">$<?= number_format($item['price'] * $item['quantity'], 2) ?></td>
+                        <td class="text-end">₾<?= number_format($item['price'], 2) ?></td>
+                        <td class="text-end fw-semibold">₾<?= number_format($item['price'] * $item['quantity'], 2) ?></td>
                     </tr>
                     <?php endforeach; ?>
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
-                            <td colspan="3" class="text-end fw-bold">Order Total</td>
-                            <td class="text-end fw-bold fs-5 text-primary">$<?= number_format($order['total'], 2) ?></td>
+                            <td colspan="3" class="text-end fw-bold">შეკვეთის ჯამი</td>
+                            <td class="text-end fw-bold fs-5 text-primary">₾<?= number_format($order['total'], 2) ?></td>
                         </tr>
                     </tfoot>
                 </table>
@@ -71,19 +71,19 @@ $items = $stmt->fetchAll();
 
     <div class="col-md-4">
         <div class="card shadow-sm mb-3">
-            <div class="card-header fw-semibold">Order Details</div>
+            <div class="card-header fw-semibold">შეკვეთის დეტალები</div>
             <div class="card-body">
                 <dl class="row mb-0">
-                    <dt class="col-5">Order #</dt>
+                    <dt class="col-5">შეკვეთა #</dt>
                     <dd class="col-7"><?= $order['id'] ?></dd>
 
-                    <dt class="col-5">Placed</dt>
-                    <dd class="col-7"><?= date('M d, Y', strtotime($order['created_at'])) ?></dd>
+                    <dt class="col-5">გაფორმდა</dt>
+                    <dd class="col-7"><?= date('d M, Y', strtotime($order['created_at'])) ?></dd>
 
-                    <dt class="col-5">Updated</dt>
-                    <dd class="col-7"><?= date('M d, Y', strtotime($order['updated_at'])) ?></dd>
+                    <dt class="col-5">განახლდა</dt>
+                    <dd class="col-7"><?= date('d M, Y', strtotime($order['updated_at'])) ?></dd>
 
-                    <dt class="col-5">Status</dt>
+                    <dt class="col-5">სტატუსი</dt>
                     <dd class="col-7"><?= statusBadge($order['status']) ?></dd>
                 </dl>
             </div>
@@ -91,7 +91,7 @@ $items = $stmt->fetchAll();
 
         <?php if (!empty($order['notes'])): ?>
         <div class="card shadow-sm">
-            <div class="card-header fw-semibold">Notes</div>
+            <div class="card-header fw-semibold">შენიშვნები</div>
             <div class="card-body">
                 <p class="mb-0 text-muted"><?= nl2br(htmlspecialchars($order['notes'])) ?></p>
             </div>

@@ -7,11 +7,11 @@ $cartCount = isLoggedIn() ? getCartCount($pdo) : 0;
 $flash = getFlash();
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ka">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>OrderSys &mdash; B2B Order Management</title>
+    <title>OrderSys &mdash; B2B შეკვეთების მართვა</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="/assets/css/style.css" rel="stylesheet">
@@ -29,14 +29,14 @@ $flash = getFlash();
             <ul class="navbar-nav me-auto">
                 <?php if (isLoggedIn()): ?>
                 <li class="nav-item">
-                    <a class="nav-link" href="/products/index.php"><i class="bi bi-grid-fill me-1"></i>Products</a>
+                    <a class="nav-link" href="/products/index.php"><i class="bi bi-grid-fill me-1"></i>პროდუქტები</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/orders/index.php"><i class="bi bi-list-ul me-1"></i>My Orders</a>
+                    <a class="nav-link" href="/orders/index.php"><i class="bi bi-list-ul me-1"></i>ჩემი შეკვეთები</a>
                 </li>
                 <?php if (isAdmin()): ?>
                 <li class="nav-item">
-                    <a class="nav-link" href="/admin/index.php"><i class="bi bi-speedometer2 me-1"></i>Admin</a>
+                    <a class="nav-link" href="/admin/index.php"><i class="bi bi-speedometer2 me-1"></i>ადმინი</a>
                 </li>
                 <?php endif; ?>
                 <?php endif; ?>
@@ -45,7 +45,7 @@ $flash = getFlash();
                 <?php if (isLoggedIn()): ?>
                 <li class="nav-item">
                     <a class="nav-link" href="/cart/index.php">
-                        <i class="bi bi-cart-fill"></i> Cart
+                        <i class="bi bi-cart-fill"></i> კალათა
                         <?php if ($cartCount > 0): ?>
                         <span class="badge bg-danger rounded-pill"><?= $cartCount ?></span>
                         <?php endif; ?>
@@ -58,12 +58,12 @@ $flash = getFlash();
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><span class="dropdown-item-text text-muted small"><?= htmlspecialchars($_SESSION['user_email'] ?? '') ?></span></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/auth/logout.php"><i class="bi bi-box-arrow-right me-1"></i>Logout</a></li>
+                        <li><a class="dropdown-item" href="/auth/logout.php"><i class="bi bi-box-arrow-right me-1"></i>გასვლა</a></li>
                     </ul>
                 </li>
                 <?php else: ?>
-                <li class="nav-item"><a class="nav-link" href="/auth/login.php">Login</a></li>
-                <li class="nav-item"><a class="nav-link btn btn-outline-light btn-sm px-3 ms-2" href="/auth/register.php">Register</a></li>
+                <li class="nav-item"><a class="nav-link" href="/auth/login.php">შესვლა</a></li>
+                <li class="nav-item"><a class="nav-link btn btn-outline-light btn-sm px-3 ms-2" href="/auth/register.php">რეგისტრაცია</a></li>
                 <?php endif; ?>
             </ul>
         </div>

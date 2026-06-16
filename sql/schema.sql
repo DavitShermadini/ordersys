@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 -- Default admin account  password: admin123
 INSERT IGNORE INTO users (name, email, password, role) VALUES
-('Admin', 'admin@ordersys.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin');
+('Admin', 'admin@ordersys.com', '$2y$10$YkUS5rnUQ7LDNm99cf1KN.A6haUltHE/yyRId4zxD.vEArmEzmKhO', 'admin');
 
 -- Sample product catalog
 INSERT IGNORE INTO products (name, description, price, stock, unit) VALUES

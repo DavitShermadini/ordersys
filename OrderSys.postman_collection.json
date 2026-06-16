@@ -1,0 +1,336 @@
+{
+  "info": {
+    "name": "OrderSys API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base", "value": "http://localhost:8080/api" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) pm.collectionVariables.set('token', res.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/login.php",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@ordersys.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/register.php",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"გიორგი მაისურაძე\",\n  \"email\": \"giorgi@example.com\",\n  \"password\": \"secret123\",\n  \"company\": \"TechGe LLC\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "ყველა პროდუქტი",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/products.php"
+          }
+        },
+        {
+          "name": "ძიება",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base}}/products.php?q=chair",
+              "query": [{ "key": "q", "value": "chair" }]
+            }
+          }
+        },
+        {
+          "name": "ერთი პროდუქტი",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base}}/products.php?id=1",
+              "query": [{ "key": "id", "value": "1" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "კალათის ნახვა",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/cart.php",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "კალათაში დამატება",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/cart.php",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": 1,\n  \"quantity\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "რაოდენობის განახლება",
+          "request": {
+            "method": "PUT",
+            "url": "{{base}}/cart.php",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cart_id\": 1,\n  \"quantity\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "პოზიციის წაშლა",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base}}/cart.php",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cart_id\": 1\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "ჩემი შეკვეთები",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/orders.php",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "ერთი შეკვეთა",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base}}/orders.php?id=1",
+              "query": [{ "key": "id", "value": "1" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Checkout",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/orders.php",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"სასწრაფოდ მჭირდება\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Orders",
+      "item": [
+        {
+          "name": "ყველა შეკვეთა",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/orders.php",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "ფილტრი სტატუსით",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base}}/admin/orders.php?status=pending",
+              "query": [{ "key": "status", "value": "pending" }]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "სტატუსის განახლება",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base}}/admin/orders.php",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_id\": 1,\n  \"status\": \"processing\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Products",
+      "item": [
+        {
+          "name": "ყველა პროდუქტი",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/products.php",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "პროდუქტის დამატება",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/admin/products.php",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ახალი პროდუქტი\",\n  \"description\": \"პროდუქტის აღწერა\",\n  \"price\": 99.99,\n  \"stock\": 50,\n  \"unit\": \"unit\"\n}"
+            }
+          }
+        },
+        {
+          "name": "პროდუქტის განახლება",
+          "request": {
+            "method": "PUT",
+            "url": "{{base}}/admin/products.php",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"name\": \"განახლებული სახელი\",\n  \"description\": \"ახალი აღწერა\",\n  \"price\": 149.99,\n  \"stock\": 30,\n  \"unit\": \"unit\"\n}"
+            }
+          }
+        },
+        {
+          "name": "პროდუქტის წაშლა",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base}}/admin/products.php",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Users",
+      "item": [
+        {
+          "name": "ყველა მომხმარებელი",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/users.php",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "მომხმარებლის დამატება",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/admin/users.php",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ნინო კვარაცხელია\",\n  \"email\": \"nino@example.com\",\n  \"password\": \"pass123\",\n  \"company\": \"Geo LLC\",\n  \"role\": \"customer\"\n}"
+            }
+          }
+        },
+        {
+          "name": "მომხმარებლის განახლება",
+          "request": {
+            "method": "PUT",
+            "url": "{{base}}/admin/users.php",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 2,\n  \"name\": \"ნინო კვარაცხელია\",\n  \"email\": \"nino@example.com\",\n  \"company\": \"New Company\",\n  \"role\": \"admin\",\n  \"password\": \"\"\n}"
+            }
+          }
+        },
+        {
+          "name": "მომხმარებლის წაშლა",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base}}/admin/users.php",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 2\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

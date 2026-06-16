@@ -2,7 +2,7 @@
 
 <footer class="mt-5 py-4 bg-dark text-white">
     <div class="container text-center">
-        <p class="mb-0 text-muted">&copy; <?= date('Y') ?> OrderSys &mdash; B2B Order Management System</p>
+        <p class="mb-0 text-muted">&copy; <?= date('Y') ?> OrderSys &mdash; B2B შეკვეთების მართვის სისტემა</p>
     </div>
 </footer>
 

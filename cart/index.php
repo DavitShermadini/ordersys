@@ -4,7 +4,6 @@ requireLogin();
 
 $uid = $_SESSION['user_id'];
 
-// Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
@@ -25,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cartId = (int) $_POST['cart_id'];
         $pdo->prepare("DELETE FROM cart WHERE id = ? AND user_id = ?")
             ->execute([$cartId, $uid]);
-        flash('success', 'Item removed from cart.');
+        flash('success', 'პოზიცია კალათიდან წაიშალა.');
         redirect('/cart/index.php');
     }
 
@@ -42,14 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $cartItems = $stmt->fetchAll();
 
         if (empty($cartItems)) {
-            flash('danger', 'Your cart is empty.');
+            flash('danger', 'თქვენი კალათა ცარიელია.');
             redirect('/cart/index.php');
         }
 
-        // Validate stock
         foreach ($cartItems as $item) {
             if ($item['quantity'] > $item['stock']) {
-                flash('danger', '"' . $item['name'] . '" only has ' . $item['stock'] . ' units in stock.');
+                flash('danger', '"' . $item['name'] . '" — მარაგში მხოლოდ ' . $item['stock'] . ' ერთეულია.');
                 redirect('/cart/index.php');
             }
         }
@@ -73,17 +71,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare("DELETE FROM cart WHERE user_id = ?")->execute([$uid]);
             $pdo->commit();
 
-            flash('success', 'Order #' . $orderId . ' placed successfully!');
+            flash('success', 'შეკვეთა #' . $orderId . ' წარმატებით გაფორმდა!');
             redirect('/orders/view.php?id=' . $orderId);
         } catch (Exception $e) {
             $pdo->rollBack();
-            flash('danger', 'Checkout failed. Please try again.');
+            flash('danger', 'გაფორმება ვერ მოხერხდა. სცადეთ თავიდან.');
             redirect('/cart/index.php');
         }
     }
 }
 
-// Load cart
 $stmt = $pdo->prepare("
     SELECT c.id AS cart_id, c.quantity, p.id AS product_id, p.name, p.price, p.stock, p.unit
     FROM cart c
@@ -98,9 +95,9 @@ $total = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cartItems)
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0"><i class="bi bi-cart-fill me-2"></i>Your Cart</h2>
+    <h2 class="mb-0"><i class="bi bi-cart-fill me-2"></i>თქვენი კალათა</h2>
     <a href="/products/index.php" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Continue Shopping
+        <i class="bi bi-arrow-left me-1"></i>შოპინგის გაგრძელება
     </a>
 </div>
 
@@ -108,7 +105,7 @@ $total = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cartItems)
 <div class="card">
     <div class="card-body text-center py-5 text-muted">
         <i class="bi bi-cart-x display-3 d-block mb-3"></i>
-        <p class="mb-0">Your cart is empty. <a href="/products/index.php">Browse products</a>.</p>
+        <p class="mb-0">თქვენი კალათა ცარიელია. <a href="/products/index.php">პროდუქტების დათვალიერება</a>.</p>
     </div>
 </div>
 <?php else: ?>
@@ -119,10 +116,10 @@ $total = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cartItems)
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
                         <tr>
-                            <th>Product</th>
-                            <th class="text-center" style="width:130px">Quantity</th>
-                            <th class="text-end">Unit Price</th>
-                            <th class="text-end">Subtotal</th>
+                            <th>პროდუქტი</th>
+                            <th class="text-center" style="width:130px">რაოდენობა</th>
+                            <th class="text-end">ფასი</th>
+                            <th class="text-end">ჯამი</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -131,7 +128,7 @@ $total = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cartItems)
                     <tr>
                         <td>
                             <div class="fw-semibold"><?= htmlspecialchars($item['name']) ?></div>
-                            <div class="text-muted small">per <?= htmlspecialchars($item['unit']) ?></div>
+                            <div class="text-muted small"><?= htmlspecialchars($item['unit']) ?>-ზე</div>
                         </td>
                         <td>
                             <form method="POST" class="d-flex gap-1 justify-content-center">
@@ -139,18 +136,18 @@ $total = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cartItems)
                                 <input type="hidden" name="cart_id" value="<?= $item['cart_id'] ?>">
                                 <input type="number" name="quantity" value="<?= $item['quantity'] ?>"
                                        min="0" max="<?= $item['stock'] ?>" class="form-control form-control-sm text-center" style="width:65px">
-                                <button class="btn btn-sm btn-outline-secondary" title="Update">
+                                <button class="btn btn-sm btn-outline-secondary" title="განახლება">
                                     <i class="bi bi-check2"></i>
                                 </button>
                             </form>
                         </td>
-                        <td class="text-end">$<?= number_format($item['price'], 2) ?></td>
-                        <td class="text-end fw-semibold">$<?= number_format($item['price'] * $item['quantity'], 2) ?></td>
+                        <td class="text-end">₾<?= number_format($item['price'], 2) ?></td>
+                        <td class="text-end fw-semibold">₾<?= number_format($item['price'] * $item['quantity'], 2) ?></td>
                         <td>
                             <form method="POST">
                                 <input type="hidden" name="action" value="remove">
                                 <input type="hidden" name="cart_id" value="<?= $item['cart_id'] ?>">
-                                <button class="btn btn-sm btn-outline-danger" title="Remove">
+                                <button class="btn btn-sm btn-outline-danger" title="წაშლა">
                                     <i class="bi bi-trash3"></i>
                                 </button>
                             </form>
@@ -165,27 +162,27 @@ $total = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cartItems)
 
     <div class="col-lg-4">
         <div class="card shadow-sm">
-            <div class="card-header fw-semibold">Order Summary</div>
+            <div class="card-header fw-semibold">შეკვეთის შეჯამება</div>
             <div class="card-body">
                 <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Subtotal</span>
-                    <span>$<?= number_format($total, 2) ?></span>
+                    <span class="text-muted">ჯამი</span>
+                    <span>₾<?= number_format($total, 2) ?></span>
                 </div>
                 <hr>
                 <div class="d-flex justify-content-between fw-bold fs-5 mb-3">
-                    <span>Total</span>
-                    <span class="text-primary">$<?= number_format($total, 2) ?></span>
+                    <span>სულ გადასახდელი</span>
+                    <span class="text-primary">₾<?= number_format($total, 2) ?></span>
                 </div>
 
                 <form method="POST">
                     <input type="hidden" name="action" value="checkout">
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Order Notes <span class="text-muted fw-normal">(optional)</span></label>
+                        <label class="form-label fw-semibold">შენიშვნები <span class="text-muted fw-normal">(სურვილისამებრ)</span></label>
                         <textarea name="notes" class="form-control" rows="3"
-                                  placeholder="Special instructions, delivery notes…"></textarea>
+                                  placeholder="სპეციალური ინსტრუქციები, მიწოდების შენიშვნები…"></textarea>
                     </div>
                     <button class="btn btn-success w-100 py-2 fw-semibold">
-                        <i class="bi bi-bag-check-fill me-2"></i>Place Order
+                        <i class="bi bi-bag-check-fill me-2"></i>შეკვეთის გაფორმება
                     </button>
                 </form>
             </div>

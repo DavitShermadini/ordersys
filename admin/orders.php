@@ -2,14 +2,21 @@
 require_once '../includes/header.php';
 requireAdmin();
 
-// Handle status update
+$statusLabels = [
+    'pending'    => 'მოლოდინში',
+    'processing' => 'მუშავდება',
+    'shipped'    => 'გაიგზავნა',
+    'delivered'  => 'მიწოდებულია',
+    'cancelled'  => 'გაუქმებულია',
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['status'])) {
-    $allowed = ['pending','processing','shipped','delivered','cancelled'];
+    $allowed = array_keys($statusLabels);
     $status  = in_array($_POST['status'], $allowed) ? $_POST['status'] : null;
     if ($status) {
         $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?")
             ->execute([$status, (int) $_POST['order_id']]);
-        flash('success', 'Order #' . (int)$_POST['order_id'] . ' status updated to ' . ucfirst($status) . '.');
+        flash('success', 'შეკვეთა #' . (int)$_POST['order_id'] . ' სტატუსი განახლდა: ' . $statusLabels[$status] . '.');
     }
     $qs = http_build_query(array_filter(['status' => $_GET['status'] ?? '', 'view' => $_GET['view'] ?? '']));
     redirect('/admin/orders.php' . ($qs ? '?' . $qs : ''));
@@ -18,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['s
 $filterStatus = $_GET['status'] ?? '';
 $viewId       = (int) ($_GET['view'] ?? 0);
 
-// Single order view
 $viewOrder = null;
 $viewItems = [];
 if ($viewId) {
@@ -41,7 +47,6 @@ if ($viewId) {
     }
 }
 
-// Orders list
 $params = [];
 $where  = '';
 if ($filterStatus) {
@@ -57,38 +62,34 @@ $orders = $pdo->prepare("
 ");
 $orders->execute($params);
 $orders = $orders->fetchAll();
-
-$statuses = ['pending','processing','shipped','delivered','cancelled'];
 ?>
 
 <?php require_once 'partials/subnav.php'; ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0"><i class="bi bi-list-ul me-2"></i>Orders</h2>
+    <h2 class="mb-0"><i class="bi bi-list-ul me-2"></i>შეკვეთები</h2>
 </div>
 
-<!-- Status filter tabs -->
 <div class="mb-3 d-flex gap-2 flex-wrap">
-    <a href="/admin/orders.php" class="btn btn-sm <?= !$filterStatus ? 'btn-dark' : 'btn-outline-secondary' ?>">All</a>
-    <?php foreach ($statuses as $s): ?>
+    <a href="/admin/orders.php" class="btn btn-sm <?= !$filterStatus ? 'btn-dark' : 'btn-outline-secondary' ?>">ყველა</a>
+    <?php foreach ($statusLabels as $s => $label): ?>
     <a href="/admin/orders.php?status=<?= $s ?>"
        class="btn btn-sm <?= $filterStatus === $s ? 'btn-dark' : 'btn-outline-secondary' ?>">
-        <?= ucfirst($s) ?>
+        <?= $label ?>
     </a>
     <?php endforeach; ?>
 </div>
 
 <div class="row g-4">
-    <!-- Orders table -->
     <div class="<?= $viewOrder ? 'col-lg-6' : 'col-12' ?>">
         <div class="card shadow-sm">
             <div class="card-body p-0">
                 <?php if (empty($orders)): ?>
-                <p class="p-4 mb-0 text-muted">No orders found.</p>
+                <p class="p-4 mb-0 text-muted">შეკვეთები ვერ მოიძებნა.</p>
                 <?php else: ?>
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
-                        <tr><th>#</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th><th></th></tr>
+                        <tr><th>#</th><th>მომხმარებელი</th><th>პოზ.</th><th>სულ</th><th>სტატუსი</th><th>თარიღი</th><th></th></tr>
                     </thead>
                     <tbody>
                     <?php foreach ($orders as $o): ?>
@@ -101,9 +102,9 @@ $statuses = ['pending','processing','shipped','delivered','cancelled'];
                             <?php endif; ?>
                         </td>
                         <td><?= $o['item_count'] ?></td>
-                        <td>$<?= number_format($o['total'], 2) ?></td>
+                        <td>₾<?= number_format($o['total'], 2) ?></td>
                         <td><?= statusBadge($o['status']) ?></td>
-                        <td class="text-muted small"><?= date('M d, Y', strtotime($o['created_at'])) ?></td>
+                        <td class="text-muted small"><?= date('d M, Y', strtotime($o['created_at'])) ?></td>
                         <td>
                             <a href="/admin/orders.php?view=<?= $o['id'] ?><?= $filterStatus ? '&status=' . urlencode($filterStatus) : '' ?>"
                                class="btn btn-sm btn-outline-secondary">
@@ -119,17 +120,15 @@ $statuses = ['pending','processing','shipped','delivered','cancelled'];
         </div>
     </div>
 
-    <!-- Order detail panel -->
     <?php if ($viewOrder): ?>
     <div class="col-lg-6">
         <div class="card shadow-sm">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span class="fw-semibold">Order #<?= $viewOrder['id'] ?></span>
+                <span class="fw-semibold">შეკვეთა #<?= $viewOrder['id'] ?></span>
                 <a href="/admin/orders.php<?= $filterStatus ? '?status=' . urlencode($filterStatus) : '' ?>"
                    class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-lg"></i></a>
             </div>
             <div class="card-body">
-                <!-- Customer info -->
                 <div class="mb-3 p-3 bg-light rounded">
                     <div class="fw-semibold"><?= htmlspecialchars($viewOrder['user_name']) ?></div>
                     <div class="text-muted small"><?= htmlspecialchars($viewOrder['user_email']) ?></div>
@@ -138,44 +137,42 @@ $statuses = ['pending','processing','shipped','delivered','cancelled'];
                     <?php endif; ?>
                 </div>
 
-                <!-- Items -->
                 <table class="table table-sm mb-3">
                     <thead class="table-light">
-                        <tr><th>Product</th><th class="text-center">Qty</th><th class="text-end">Price</th><th class="text-end">Total</th></tr>
+                        <tr><th>პროდუქტი</th><th class="text-center">რაოდ.</th><th class="text-end">ფასი</th><th class="text-end">სულ</th></tr>
                     </thead>
                     <tbody>
                     <?php foreach ($viewItems as $item): ?>
                     <tr>
-                        <td><?= htmlspecialchars($item['product_name'] ?? 'Deleted') ?></td>
+                        <td><?= htmlspecialchars($item['product_name'] ?? 'წაშლილი') ?></td>
                         <td class="text-center"><?= $item['quantity'] ?></td>
-                        <td class="text-end">$<?= number_format($item['price'], 2) ?></td>
-                        <td class="text-end">$<?= number_format($item['price'] * $item['quantity'], 2) ?></td>
+                        <td class="text-end">₾<?= number_format($item['price'], 2) ?></td>
+                        <td class="text-end">₾<?= number_format($item['price'] * $item['quantity'], 2) ?></td>
                     </tr>
                     <?php endforeach; ?>
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
-                            <td colspan="3" class="text-end fw-bold">Total</td>
-                            <td class="text-end fw-bold text-primary">$<?= number_format($viewOrder['total'], 2) ?></td>
+                            <td colspan="3" class="text-end fw-bold">სულ</td>
+                            <td class="text-end fw-bold text-primary">₾<?= number_format($viewOrder['total'], 2) ?></td>
                         </tr>
                     </tfoot>
                 </table>
 
                 <?php if ($viewOrder['notes']): ?>
                 <div class="mb-3 p-2 bg-light rounded text-muted small">
-                    <strong>Notes:</strong> <?= nl2br(htmlspecialchars($viewOrder['notes'])) ?>
+                    <strong>შენიშვნები:</strong> <?= nl2br(htmlspecialchars($viewOrder['notes'])) ?>
                 </div>
                 <?php endif; ?>
 
-                <!-- Status update -->
                 <form method="POST" class="d-flex gap-2 align-items-center">
                     <input type="hidden" name="order_id" value="<?= $viewOrder['id'] ?>">
                     <select name="status" class="form-select form-select-sm">
-                        <?php foreach ($statuses as $s): ?>
-                        <option value="<?= $s ?>" <?= $viewOrder['status'] === $s ? 'selected' : '' ?>><?= ucfirst($s) ?></option>
+                        <?php foreach ($statusLabels as $s => $label): ?>
+                        <option value="<?= $s ?>" <?= $viewOrder['status'] === $s ? 'selected' : '' ?>><?= $label ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <button class="btn btn-sm btn-primary text-nowrap">Update Status</button>
+                    <button class="btn btn-sm btn-primary text-nowrap">სტატუსის განახლება</button>
                 </form>
             </div>
         </div>

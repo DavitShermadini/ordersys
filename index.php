@@ -3,13 +3,13 @@
 <?php if (!isLoggedIn()): ?>
 <div class="py-5 text-center">
     <i class="bi bi-box-seam-fill display-1 text-primary"></i>
-    <h1 class="display-5 fw-bold mt-3">B2B Order Management</h1>
+    <h1 class="display-5 fw-bold mt-3">B2B შეკვეთების მართვა</h1>
     <p class="col-lg-6 mx-auto lead text-muted">
-        Browse our product catalog, build your order, and track every shipment in one place.
+        დაათვალიერეთ ჩვენი პროდუქტების კატალოგი, შექმენით შეკვეთა და თვალი ადევნეთ მიწოდებებს ერთ სივრცეში.
     </p>
     <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
-        <a href="/auth/register.php" class="btn btn-primary btn-lg px-5">Get Started</a>
-        <a href="/auth/login.php" class="btn btn-outline-secondary btn-lg px-5">Login</a>
+        <a href="/auth/register.php" class="btn btn-primary btn-lg px-5">დაწყება</a>
+        <a href="/auth/login.php" class="btn btn-outline-secondary btn-lg px-5">შესვლა</a>
     </div>
 </div>
 
@@ -46,66 +46,66 @@ $recentOrders = $stmt->fetchAll();
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="mb-0">Welcome back, <?= htmlspecialchars($_SESSION['user_name']) ?>!</h2>
+        <h2 class="mb-0">კეთილი იყოს თქვენი დაბრუნება, <?= htmlspecialchars($_SESSION['user_name']) ?>!</h2>
         <?php if (!empty($_SESSION['user_company'])): ?>
         <span class="text-muted"><?= htmlspecialchars($_SESSION['user_company']) ?></span>
         <?php endif; ?>
     </div>
-    <a href="/products/index.php" class="btn btn-primary"><i class="bi bi-grid-fill me-1"></i>Browse Products</a>
+    <a href="/products/index.php" class="btn btn-primary"><i class="bi bi-grid-fill me-1"></i>პროდუქტების დათვალიერება</a>
 </div>
 
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
         <div class="card text-white bg-primary p-3 text-center">
             <div class="fs-2 fw-bold"><?= $totalOrders ?></div>
-            <div class="small">Total Orders</div>
+            <div class="small">სულ შეკვეთები</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="card text-white bg-warning p-3 text-center">
             <div class="fs-2 fw-bold"><?= $pendingOrders ?></div>
-            <div class="small">Pending</div>
+            <div class="small">მოლოდინში</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="card text-white bg-success p-3 text-center">
             <div class="fs-2 fw-bold"><?= $availableProducts ?></div>
-            <div class="small">Products Available</div>
+            <div class="small">ხელმისაწვდომი პროდუქტები</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
         <div class="card text-white bg-info p-3 text-center">
             <div class="fs-2 fw-bold"><?= $cartItems ?></div>
-            <div class="small">Items in Cart</div>
+            <div class="small">კალათაში</div>
         </div>
     </div>
 </div>
 
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Recent Orders</span>
-        <a href="/orders/index.php" class="btn btn-sm btn-outline-secondary">View All</a>
+        <span>ბოლო შეკვეთები</span>
+        <a href="/orders/index.php" class="btn btn-sm btn-outline-secondary">ყველა</a>
     </div>
     <div class="card-body p-0">
         <?php if (empty($recentOrders)): ?>
-        <p class="p-4 mb-0 text-muted">No orders yet. <a href="/products/index.php">Start browsing products</a>.</p>
+        <p class="p-4 mb-0 text-muted">შეკვეთები ჯერ არ არის. <a href="/products/index.php">დაიწყეთ პროდუქტების დათვალიერება</a>.</p>
         <?php else: ?>
         <table class="table table-hover mb-0">
             <thead>
                 <tr>
-                    <th>Order</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th><th></th>
+                    <th>შეკვეთა</th><th>თარიღი</th><th>პოზიციები</th><th>სულ</th><th>სტატუსი</th><th></th>
                 </tr>
             </thead>
             <tbody>
             <?php foreach ($recentOrders as $o): ?>
             <tr>
                 <td class="align-middle fw-bold">#<?= $o['id'] ?></td>
-                <td class="align-middle"><?= date('M d, Y', strtotime($o['created_at'])) ?></td>
+                <td class="align-middle"><?= date('d M, Y', strtotime($o['created_at'])) ?></td>
                 <td class="align-middle"><?= $o['item_count'] ?></td>
-                <td class="align-middle">$<?= number_format($o['total'], 2) ?></td>
+                <td class="align-middle">₾<?= number_format($o['total'], 2) ?></td>
                 <td class="align-middle"><?= statusBadge($o['status']) ?></td>
                 <td class="align-middle">
-                    <a href="/orders/view.php?id=<?= $o['id'] ?>" class="btn btn-sm btn-outline-secondary">View</a>
+                    <a href="/orders/view.php?id=<?= $o['id'] ?>" class="btn btn-sm btn-outline-secondary">ნახვა</a>
                 </td>
             </tr>
             <?php endforeach; ?>

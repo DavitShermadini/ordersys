@@ -48,13 +48,21 @@ function getFlash() {
 }
 
 function statusBadge($status) {
-    $map = [
+    $colors = [
         'pending'    => 'warning',
         'processing' => 'info',
         'shipped'    => 'primary',
         'delivered'  => 'success',
         'cancelled'  => 'danger',
     ];
-    $color = $map[$status] ?? 'secondary';
-    return "<span class='badge bg-$color'>" . ucfirst(htmlspecialchars($status)) . "</span>";
+    $labels = [
+        'pending'    => 'მოლოდინში',
+        'processing' => 'მუშავდება',
+        'shipped'    => 'გაიგზავნა',
+        'delivered'  => 'მიწოდებულია',
+        'cancelled'  => 'გაუქმებულია',
+    ];
+    $color = $colors[$status] ?? 'secondary';
+    $label = $labels[$status] ?? htmlspecialchars($status);
+    return "<span class='badge bg-$color'>$label</span>";
 }
