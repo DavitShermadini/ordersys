@@ -1,5 +1,5 @@
 <?php
-define('JWT_SECRET', env('JWT_SECRET', 'ordersys-change-this-secret-in-production'));
+define('JWT_SECRET', 'ordersys-change-this-secret-in-production');
 
 function base64url_encode(string $data): string {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
