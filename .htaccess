@@ -1,0 +1,20 @@
+Options -Indexes
+RewriteEngine On
+
+# ─── API clean URLs ───────────────────────────────────────────────────────────
+RewriteRule ^api/auth/login/?$          api/auth/login.php    [L]
+RewriteRule ^api/auth/register/?$       api/auth/register.php [L]
+RewriteRule ^api/auth/me/?$             api/auth/me.php       [L]
+
+RewriteRule ^api/products/(\d+)/?$      api/products.php?id=$1   [QSA,L]
+RewriteRule ^api/categories/(\d+)/?$    api/categories.php?id=$1 [QSA,L]
+RewriteRule ^api/orders/(\d+)/?$        api/orders.php?id=$1     [QSA,L]
+
+RewriteRule ^api/products/?$            api/products.php    [QSA,L]
+RewriteRule ^api/categories/?$          api/categories.php  [QSA,L]
+RewriteRule ^api/cart/?$                api/cart.php        [QSA,L]
+RewriteRule ^api/orders/?$              api/orders.php      [QSA,L]
+
+RewriteRule ^api/admin/products/?$      api/admin/products.php [L]
+RewriteRule ^api/admin/orders/?$        api/admin/orders.php   [L]
+RewriteRule ^api/admin/users/?$         api/admin/users.php    [L]

@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS products (
     price DECIMAL(10,2) NOT NULL,
     stock INT DEFAULT 0,
     unit VARCHAR(50) DEFAULT 'unit',
+    image VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

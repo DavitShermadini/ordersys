@@ -1,6 +1,11 @@
 <?php
+// Check login before loading any HTML
+session_start();
+require_once '../config/db.php';
+require_once '../includes/functions.php';
+if (isLoggedIn()) redirect(isAdmin() ? '/admin/index.php' : '/products/index.php');
+
 require_once '../includes/header.php';
-if (isLoggedIn()) redirect('/index.php');
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -19,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_role']    = $user['role'];
             $_SESSION['user_company'] = $user['company'];
             flash('success', 'კეთილი იყოს თქვენი დაბრუნება, ' . $user['name'] . '!');
-            redirect('/index.php');
+            redirect($user['role'] === 'admin' ? '/admin/index.php' : '/products/index.php');
         } else {
             $error = 'არასწორი ელ-ფოსტა ან პაროლი.';
         }
@@ -43,7 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="POST">
         <div class="mb-3">
             <label class="form-label fw-semibold">ელ-ფოსტა</label>
-            <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required autofocus>
+            <input type="email" name="email" class="form-control"
+                   value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required autofocus>
         </div>
         <div class="mb-4">
             <label class="form-label fw-semibold">პაროლი</label>
@@ -51,8 +57,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <button type="submit" class="btn btn-primary w-100 py-2">შესვლა</button>
     </form>
-    <hr>
-    <p class="text-center mb-0 text-muted">ანგარიში არ გაქვთ? <a href="/auth/register.php">რეგისტრაცია</a></p>
 </div>
 </div>
 </div>

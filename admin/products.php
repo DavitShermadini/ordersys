@@ -4,6 +4,14 @@ requireAdmin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
     $pid = (int) $_POST['product_id'];
+    // Delete associated image file before removing the DB row
+    $stmt = $pdo->prepare("SELECT image FROM products WHERE id = ?");
+    $stmt->execute([$pid]);
+    $img = $stmt->fetchColumn();
+    if ($img) {
+        $imgPath = __DIR__ . '/../uploads/products/' . $img;
+        if (file_exists($imgPath)) @unlink($imgPath);
+    }
     $pdo->prepare("DELETE FROM products WHERE id = ?")->execute([$pid]);
     flash('success', 'პროდუქტი წაიშალა.');
     redirect('/admin/products.php');
@@ -72,6 +80,7 @@ $products = $stmt->fetchAll();
         <table class="table table-hover mb-0 align-middle">
             <thead class="table-light">
                 <tr>
+                    <th style="width:56px"></th>
                     <th>სახელი</th>
                     <th>კატეგორია</th>
                     <th>აღწერა</th>
@@ -84,6 +93,17 @@ $products = $stmt->fetchAll();
             <tbody>
             <?php foreach ($products as $p): ?>
             <tr>
+                <td class="py-1">
+                    <?php if ($p['image']): ?>
+                    <img src="/uploads/products/<?= htmlspecialchars($p['image']) ?>"
+                         alt="" class="rounded" style="width:44px;height:44px;object-fit:cover">
+                    <?php else: ?>
+                    <div class="rounded bg-light border d-flex align-items-center justify-content-center"
+                         style="width:44px;height:44px">
+                        <i class="bi bi-image text-muted"></i>
+                    </div>
+                    <?php endif; ?>
+                </td>
                 <td class="fw-semibold"><?= htmlspecialchars($p['name']) ?></td>
                 <td>
                     <?php if ($p['category_name']): ?>

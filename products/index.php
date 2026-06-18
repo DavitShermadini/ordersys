@@ -96,6 +96,16 @@ $products = $stmt->fetchAll();
 <?php foreach ($products as $p): ?>
 <div class="col">
     <div class="card h-100 shadow-sm">
+        <?php if ($p['image']): ?>
+        <img src="/uploads/products/<?= htmlspecialchars($p['image']) ?>"
+             class="card-img-top" alt="<?= htmlspecialchars($p['name']) ?>"
+             style="height:200px;object-fit:cover">
+        <?php else: ?>
+        <div class="d-flex align-items-center justify-content-center bg-light border-bottom"
+             style="height:180px">
+            <i class="bi bi-image text-muted" style="font-size:3rem;opacity:.35"></i>
+        </div>
+        <?php endif; ?>
         <div class="card-body d-flex flex-column">
             <?php if ($p['category_name']): ?>
             <span class="badge bg-secondary mb-2 align-self-start"><?= htmlspecialchars($p['category_name']) ?></span>

@@ -112,7 +112,7 @@ $total = array_sum(array_map(fn($i) => $i['price'] * $i['quantity'], $cartItems)
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card shadow-sm">
-            <div class="card-body p-0">
+            <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
                         <tr>
