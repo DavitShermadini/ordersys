@@ -5,6 +5,8 @@
        href="/admin/orders.php"><i class="bi bi-list-ul me-1"></i>შეკვეთები</a>
     <a class="nav-link <?= in_array(basename($_SERVER['PHP_SELF']), ['products.php','product_edit.php']) ? 'active' : 'text-dark' ?>"
        href="/admin/products.php"><i class="bi bi-box-seam me-1"></i>პროდუქტები</a>
+    <a class="nav-link <?= basename($_SERVER['PHP_SELF']) === 'categories.php' ? 'active' : 'text-dark' ?>"
+       href="/admin/categories.php"><i class="bi bi-tags-fill me-1"></i>კატეგორიები</a>
     <a class="nav-link <?= basename($_SERVER['PHP_SELF']) === 'users.php' ? 'active' : 'text-dark' ?>"
        href="/admin/users.php"><i class="bi bi-people-fill me-1"></i>მომხმარებლები</a>
 </nav>

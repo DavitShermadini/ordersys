@@ -9,13 +9,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     redirect('/admin/products.php');
 }
 
-$search = trim($_GET['q'] ?? '');
-if ($search !== '') {
-    $stmt = $pdo->prepare("SELECT * FROM products WHERE name LIKE ? ORDER BY name");
-    $stmt->execute(['%' . $search . '%']);
-} else {
-    $stmt = $pdo->query("SELECT * FROM products ORDER BY name");
-}
+$categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();
+
+$search     = trim($_GET['q'] ?? '');
+$catFilter  = (int) ($_GET['category_id'] ?? 0);
+
+$where  = [];
+$params = [];
+if ($search !== '') { $where[] = 'p.name LIKE ?'; $params[] = '%'.$search.'%'; }
+if ($catFilter)     { $where[] = 'p.category_id = ?'; $params[] = $catFilter; }
+
+$sql = "SELECT p.*, c.name AS category_name
+        FROM products p
+        LEFT JOIN categories c ON c.id = p.category_id"
+     . ($where ? ' WHERE ' . implode(' AND ', $where) : '')
+     . " ORDER BY p.name";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $products = $stmt->fetchAll();
 ?>
 
@@ -28,15 +39,30 @@ $products = $stmt->fetchAll();
     </a>
 </div>
 
-<form method="GET" class="mb-3">
-    <div class="input-group" style="max-width:360px">
-        <input type="text" name="q" class="form-control" placeholder="პროდუქტის ძიება…" value="<?= htmlspecialchars($search) ?>">
-        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-        <?php if ($search): ?>
-        <a href="/admin/products.php" class="btn btn-outline-danger"><i class="bi bi-x-lg"></i></a>
+<div class="d-flex gap-2 mb-3 flex-wrap align-items-center">
+    <form method="GET" class="d-flex gap-2">
+        <input type="text" name="q" class="form-control form-control-sm" style="width:220px"
+               placeholder="ძიება…" value="<?= htmlspecialchars($search) ?>">
+        <?php if ($catFilter): ?>
+        <input type="hidden" name="category_id" value="<?= $catFilter ?>">
         <?php endif; ?>
+        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
+        <?php if ($search || $catFilter): ?>
+        <a href="/admin/products.php" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg"></i></a>
+        <?php endif; ?>
+    </form>
+
+    <div class="d-flex gap-1 flex-wrap ms-auto">
+        <a href="/admin/products.php<?= $search ? '?q='.urlencode($search) : '' ?>"
+           class="btn btn-sm <?= !$catFilter ? 'btn-dark' : 'btn-outline-secondary' ?>">ყველა</a>
+        <?php foreach ($categories as $cat): ?>
+        <a href="/admin/products.php?category_id=<?= $cat['id'] ?><?= $search ? '&q='.urlencode($search) : '' ?>"
+           class="btn btn-sm <?= $catFilter === (int)$cat['id'] ? 'btn-dark' : 'btn-outline-secondary' ?>">
+            <?= htmlspecialchars($cat['name']) ?>
+        </a>
+        <?php endforeach; ?>
     </div>
-</form>
+</div>
 
 <div class="card shadow-sm">
     <div class="card-body p-0">
@@ -46,22 +72,28 @@ $products = $stmt->fetchAll();
         <table class="table table-hover mb-0 align-middle">
             <thead class="table-light">
                 <tr>
-                    <th>ID</th>
                     <th>სახელი</th>
+                    <th>კატეგორია</th>
                     <th>აღწერა</th>
                     <th class="text-end">ფასი</th>
                     <th class="text-center">მარაგი</th>
-                    <th>ერთეული</th>
+                    <th>ერთ.</th>
                     <th></th>
                 </tr>
             </thead>
             <tbody>
             <?php foreach ($products as $p): ?>
             <tr>
-                <td class="text-muted small"><?= $p['id'] ?></td>
                 <td class="fw-semibold"><?= htmlspecialchars($p['name']) ?></td>
-                <td class="text-muted small" style="max-width:250px">
-                    <span class="text-truncate d-inline-block" style="max-width:240px">
+                <td>
+                    <?php if ($p['category_name']): ?>
+                    <span class="badge bg-secondary"><?= htmlspecialchars($p['category_name']) ?></span>
+                    <?php else: ?>
+                    <span class="text-muted small">—</span>
+                    <?php endif; ?>
+                </td>
+                <td class="text-muted small" style="max-width:200px">
+                    <span class="text-truncate d-inline-block" style="max-width:190px">
                         <?= htmlspecialchars($p['description'] ?? '') ?>
                     </span>
                 </td>

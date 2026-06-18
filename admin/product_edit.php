@@ -6,6 +6,8 @@ $id      = (int) ($_GET['id'] ?? 0);
 $product = null;
 $errors  = [];
 
+$categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();
+
 if ($id) {
     $stmt = $pdo->prepare("SELECT * FROM products WHERE id = ?");
     $stmt->execute([$id]);
@@ -22,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price       = (float) ($_POST['price'] ?? 0);
     $stock       = (int) ($_POST['stock'] ?? 0);
     $unit        = trim($_POST['unit'] ?? 'unit');
+    $categoryId  = (int) ($_POST['category_id'] ?? 0) ?: null;
 
     if ($name === '')  $errors[] = 'სახელი სავალდებულოა.';
     if ($price <= 0)   $errors[] = 'ფასი უნდა იყოს ნულზე მეტი.';
@@ -30,18 +33,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         if ($id) {
-            $pdo->prepare("UPDATE products SET name=?, description=?, price=?, stock=?, unit=? WHERE id=?")
-                ->execute([$name, $description ?: null, $price, $stock, $unit, $id]);
+            $pdo->prepare("UPDATE products SET name=?, description=?, price=?, stock=?, unit=?, category_id=? WHERE id=?")
+                ->execute([$name, $description ?: null, $price, $stock, $unit, $categoryId, $id]);
             flash('success', 'პროდუქტი განახლდა.');
         } else {
-            $pdo->prepare("INSERT INTO products (name, description, price, stock, unit) VALUES (?,?,?,?,?)")
-                ->execute([$name, $description ?: null, $price, $stock, $unit]);
+            $pdo->prepare("INSERT INTO products (name, description, price, stock, unit, category_id) VALUES (?,?,?,?,?,?)")
+                ->execute([$name, $description ?: null, $price, $stock, $unit, $categoryId]);
             flash('success', 'პროდუქტი დაემატა.');
         }
         redirect('/admin/products.php');
     }
 
-    $product = compact('name','description','price','stock','unit');
+    $product = compact('name','description','price','stock','unit','categoryId');
+    $product['category_id'] = $categoryId;
 }
 ?>
 
@@ -54,11 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php if (!empty($errors)): ?>
 <div class="alert alert-danger">
-    <ul class="mb-0">
-        <?php foreach ($errors as $e): ?>
-        <li><?= htmlspecialchars($e) ?></li>
-        <?php endforeach; ?>
-    </ul>
+    <ul class="mb-0"><?php foreach ($errors as $e): ?><li><?= htmlspecialchars($e) ?></li><?php endforeach; ?></ul>
 </div>
 <?php endif; ?>
 
@@ -71,10 +71,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                        value="<?= htmlspecialchars($product['name'] ?? '') ?>" required autofocus>
             </div>
             <div class="mb-3">
+                <label class="form-label fw-semibold">კატეგორია</label>
+                <select name="category_id" class="form-select">
+                    <option value="">— კატეგორიის გარეშე —</option>
+                    <?php foreach ($categories as $cat): ?>
+                    <option value="<?= $cat['id'] ?>"
+                        <?= ($product['category_id'] ?? null) == $cat['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($cat['name']) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="mb-3">
                 <label class="form-label fw-semibold">აღწერა</label>
                 <textarea name="description" class="form-control" rows="3"><?= htmlspecialchars($product['description'] ?? '') ?></textarea>
             </div>
-            <div class="row g-3 mb-3">
+            <div class="row g-3 mb-4">
                 <div class="col-sm-4">
                     <label class="form-label fw-semibold">ფასი (₾) <span class="text-danger">*</span></label>
                     <input type="number" name="price" class="form-control" step="0.01" min="0.01"

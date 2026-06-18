@@ -20,17 +20,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
     } else {
         flash('danger', 'პროდუქტი არ არის მარაგში.');
     }
-    redirect('/products/index.php' . (isset($_GET['q']) ? '?q=' . urlencode($_GET['q']) : ''));
+    $qs = http_build_query(array_filter(['q' => $_GET['q'] ?? '', 'category_id' => $_GET['category_id'] ?? '']));
+    redirect('/products/index.php' . ($qs ? '?' . $qs : ''));
 }
 
-$search = trim($_GET['q'] ?? '');
+$categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();
+
+$search    = trim($_GET['q'] ?? '');
+$catFilter = (int) ($_GET['category_id'] ?? 0);
+
+$where  = [];
+$params = [];
 if ($search !== '') {
-    $stmt = $pdo->prepare("SELECT * FROM products WHERE name LIKE ? OR description LIKE ? ORDER BY name");
-    $like = '%' . $search . '%';
-    $stmt->execute([$like, $like]);
-} else {
-    $stmt = $pdo->query("SELECT * FROM products ORDER BY name");
+    $where[]  = '(p.name LIKE ? OR p.description LIKE ?)';
+    $params[] = '%'.$search.'%';
+    $params[] = '%'.$search.'%';
 }
+if ($catFilter) {
+    $where[]  = 'p.category_id = ?';
+    $params[] = $catFilter;
+}
+
+$sql = "SELECT p.*, c.name AS category_name
+        FROM products p
+        LEFT JOIN categories c ON c.id = p.category_id"
+     . ($where ? ' WHERE ' . implode(' AND ', $where) : '')
+     . " ORDER BY p.name";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $products = $stmt->fetchAll();
 ?>
 
@@ -44,15 +62,32 @@ $products = $stmt->fetchAll();
     </a>
 </div>
 
-<form method="GET" class="mb-4">
+<!-- ძიება -->
+<form method="GET" class="mb-3">
+    <?php if ($catFilter): ?>
+    <input type="hidden" name="category_id" value="<?= $catFilter ?>">
+    <?php endif; ?>
     <div class="input-group">
-        <input type="text" name="q" class="form-control" placeholder="პროდუქტების ძიება…" value="<?= htmlspecialchars($search) ?>">
+        <input type="text" name="q" class="form-control" placeholder="პროდუქტების ძიება…"
+               value="<?= htmlspecialchars($search) ?>">
         <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-        <?php if ($search): ?>
+        <?php if ($search || $catFilter): ?>
         <a href="/products/index.php" class="btn btn-outline-danger"><i class="bi bi-x-lg"></i></a>
         <?php endif; ?>
     </div>
 </form>
+
+<!-- კატეგორიის ფილტრი -->
+<div class="d-flex gap-2 flex-wrap mb-4">
+    <a href="/products/index.php<?= $search ? '?q='.urlencode($search) : '' ?>"
+       class="btn btn-sm <?= !$catFilter ? 'btn-dark' : 'btn-outline-secondary' ?>">ყველა</a>
+    <?php foreach ($categories as $cat): ?>
+    <a href="/products/index.php?category_id=<?= $cat['id'] ?><?= $search ? '&q='.urlencode($search) : '' ?>"
+       class="btn btn-sm <?= $catFilter === (int)$cat['id'] ? 'btn-dark' : 'btn-outline-secondary' ?>">
+        <?= htmlspecialchars($cat['name']) ?>
+    </a>
+    <?php endforeach; ?>
+</div>
 
 <?php if (empty($products)): ?>
 <div class="alert alert-info">პროდუქტები ვერ მოიძებნა<?= $search ? ' — "' . htmlspecialchars($search) . '"' : '' ?>.</div>
@@ -62,6 +97,9 @@ $products = $stmt->fetchAll();
 <div class="col">
     <div class="card h-100 shadow-sm">
         <div class="card-body d-flex flex-column">
+            <?php if ($p['category_name']): ?>
+            <span class="badge bg-secondary mb-2 align-self-start"><?= htmlspecialchars($p['category_name']) ?></span>
+            <?php endif; ?>
             <h5 class="card-title"><?= htmlspecialchars($p['name']) ?></h5>
             <p class="card-text text-muted small flex-grow-1"><?= htmlspecialchars($p['description'] ?? '') ?></p>
             <div class="d-flex justify-content-between align-items-center mb-3">

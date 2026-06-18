@@ -16,11 +16,14 @@ if ($id) {
 }
 
 // List
-if ($search !== '') {
-    $stmt = $pdo->prepare("SELECT * FROM products WHERE name LIKE ? OR description LIKE ? ORDER BY name");
-    $stmt->execute(['%'.$search.'%', '%'.$search.'%']);
-} else {
-    $stmt = $pdo->query("SELECT * FROM products ORDER BY name");
-}
+$catId  = (int) ($_GET['category_id'] ?? 0);
+$where  = [];
+$params = [];
+if ($search !== '') { $where[] = '(p.name LIKE ? OR p.description LIKE ?)'; $params[] = '%'.$search.'%'; $params[] = '%'.$search.'%'; }
+if ($catId)         { $where[] = 'p.category_id = ?'; $params[] = $catId; }
 
+$sql = "SELECT p.*, c.name AS category_name FROM products p LEFT JOIN categories c ON c.id = p.category_id"
+     . ($where ? ' WHERE ' . implode(' AND ', $where) : '') . " ORDER BY p.name";
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 json_response($stmt->fetchAll());
