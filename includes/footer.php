@@ -9,3 +9,15 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+<?php
+$_html = ob_get_clean();
+if (APP_BASE !== '') {
+    // Rewrite all absolute-path HTML attributes to include the subdirectory prefix
+    $_html = preg_replace(
+        '/((?:href|action|src)=")(\/)/',
+        '$1' . APP_BASE . '/',
+        $_html
+    );
+}
+echo $_html;
+?>

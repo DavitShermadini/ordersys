@@ -1,16 +1,14 @@
 <?php
 function requireLogin() {
     if (!isset($_SESSION['user_id'])) {
-        header('Location: /auth/login.php');
-        exit;
+        redirect('/auth/login.php');
     }
 }
 
 function requireAdmin() {
     requireLogin();
     if ($_SESSION['user_role'] !== 'admin') {
-        header('Location: /index.php');
-        exit;
+        redirect('/index.php');
     }
 }
 
@@ -30,6 +28,7 @@ function getCartCount($pdo) {
 }
 
 function redirect($url) {
+    if ($url[0] === '/') $url = APP_BASE . $url;
     header("Location: $url");
     exit;
 }

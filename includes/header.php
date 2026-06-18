@@ -5,6 +5,7 @@ require_once __DIR__ . '/functions.php';
 
 $cartCount = isLoggedIn() ? getCartCount($pdo) : 0;
 $flash = getFlash();
+ob_start();
 ?>
 <!DOCTYPE html>
 <html lang="ka">
