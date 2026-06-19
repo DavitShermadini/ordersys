@@ -9,4 +9,7 @@
        href="/admin/categories.php"><i class="bi bi-tags-fill me-1"></i>კატეგორიები</a>
     <a class="nav-link <?= basename($_SERVER['PHP_SELF']) === 'users.php' ? 'active' : 'text-dark' ?>"
        href="/admin/users.php"><i class="bi bi-people-fill me-1"></i>მომხმარებლები</a>
+    <a class="nav-link text-dark ms-auto" href="/api/docs/" target="_blank">
+        <i class="bi bi-braces-asterisk me-1"></i>API Docs
+    </a>
 </nav>

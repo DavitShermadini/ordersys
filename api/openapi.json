@@ -1,0 +1,669 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "OrderSys API",
+    "description": "B2B შეკვეთების მართვის სისტემის REST API.\n\n**ავტორიზაცია:** `POST /api/auth/login` → მიიღეთ `token` → Authorize ღილაკი → `Bearer <token>`",
+    "version": "1.0.0"
+  },
+  "servers": [
+    { "url": "http://localhost:8080", "description": "ლოკალური (PHP built-in server)" },
+    { "url": "https://gssystems.ge/Orders", "description": "პროდაქშენი" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "example": "Unauthenticated" }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id":         { "type": "integer" },
+          "name":       { "type": "string" },
+          "email":      { "type": "string", "format": "email" },
+          "company":    { "type": "string", "nullable": true },
+          "role":       { "type": "string", "enum": ["admin", "customer"] },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id":            { "type": "integer" },
+          "name":          { "type": "string" },
+          "description":   { "type": "string", "nullable": true },
+          "price":         { "type": "number", "format": "float" },
+          "stock":         { "type": "integer" },
+          "unit":          { "type": "string" },
+          "image":         { "type": "string", "nullable": true },
+          "category_id":   { "type": "integer", "nullable": true },
+          "category_name": { "type": "string", "nullable": true }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id":            { "type": "integer" },
+          "name":          { "type": "string" },
+          "product_count": { "type": "integer" },
+          "created_at":    { "type": "string", "format": "date-time" }
+        }
+      },
+      "CartItem": {
+        "type": "object",
+        "properties": {
+          "cart_id":    { "type": "integer" },
+          "product_id": { "type": "integer" },
+          "name":       { "type": "string" },
+          "price":      { "type": "number" },
+          "quantity":   { "type": "integer" },
+          "subtotal":   { "type": "number" },
+          "unit":       { "type": "string" }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id":         { "type": "integer" },
+          "user_id":    { "type": "integer" },
+          "total":      { "type": "number" },
+          "status":     { "type": "string", "enum": ["pending","processing","shipped","delivered","cancelled"] },
+          "notes":      { "type": "string", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "OrderItem": {
+        "type": "object",
+        "properties": {
+          "id":             { "type": "integer" },
+          "product_id":     { "type": "integer" },
+          "product_name":   { "type": "string" },
+          "quantity":       { "type": "integer" },
+          "price":          { "type": "number", "description": "თავდაპირველი ფასი" },
+          "adjusted_price": { "type": "number", "nullable": true, "description": "ადმინის მიერ შეცვლილი ფასი" },
+          "unit":           { "type": "string" }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "ავტორიზაცია საჭიროა",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "Forbidden": {
+        "description": "მხოლოდ ადმინისთვის",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "NotFound": {
+        "description": "ვერ მოიძებნა",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  },
+
+  "tags": [
+    { "name": "Auth",            "description": "ავტორიზაცია" },
+    { "name": "Products",        "description": "პროდუქტები (საჯარო)" },
+    { "name": "Categories",      "description": "კატეგორიები (GET საჯარო)" },
+    { "name": "Cart",            "description": "კალათა (auth)" },
+    { "name": "Orders",          "description": "შეკვეთები (auth)" },
+    { "name": "Admin · Products","description": "პროდუქტების ადმინ-მართვა" },
+    { "name": "Admin · Orders",  "description": "შეკვეთების ადმინ-მართვა" },
+    { "name": "Admin · Users",   "description": "მომხმარებლების ადმინ-მართვა" }
+  ],
+
+  "paths": {
+
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "შესვლა — JWT token-ის მიღება",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email","password"],
+                "properties": {
+                  "email":    { "type": "string", "format": "email", "example": "admin@ordersys.com" },
+                  "password": { "type": "string", "example": "admin123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "წარმატებული შესვლა",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" },
+                    "user":  { "$ref": "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "მიმდინარე მომხმარებლის პროფილი",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "მომხმარებლის ინფო",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/api/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "პროდუქტების სია",
+        "parameters": [
+          { "name": "q",           "in": "query", "schema": { "type": "string" },  "description": "ძიება სახელით" },
+          { "name": "category_id", "in": "query", "schema": { "type": "integer" }, "description": "კატეგორიის ფილტრი" }
+        ],
+        "responses": {
+          "200": {
+            "description": "პროდუქტების სია",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } } } }
+          }
+        }
+      }
+    },
+
+    "/api/products/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "ერთი პროდუქტი",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "პროდუქტი", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+
+    "/api/categories": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "კატეგორიების სია (product_count-ით)",
+        "responses": {
+          "200": {
+            "description": "კატეგორიები",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Category" } } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Categories"],
+        "summary": "კატეგორიის შექმნა (admin)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string", "example": "ახალი კატეგორია" } } } } }
+        },
+        "responses": {
+          "201": { "description": "შეიქმნა", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Category" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "description": "სახელი უკვე არსებობს" }
+        }
+      }
+    },
+
+    "/api/categories/{id}": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "კატეგორია + მასში შემავალი პროდუქტები",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "კატეგორია პროდუქტებით" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Categories"],
+        "summary": "კატეგორიის სახელის შეცვლა (admin)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" } } } } }
+        },
+        "responses": {
+          "200": { "description": "განახლდა", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Category" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Categories"],
+        "summary": "კატეგორიის წაშლა (admin, მხოლოდ ცარიელი)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "წაიშალა" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "description": "კატეგორიაში პროდუქტებია" }
+        }
+      }
+    },
+
+    "/api/cart": {
+      "get": {
+        "tags": ["Cart"],
+        "summary": "კალათის ნახვა",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "კალათის შინაარსი",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/CartItem" } },
+                    "total": { "type": "number" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Cart"],
+        "summary": "კალათაში დამატება",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["product_id"],
+                "properties": {
+                  "product_id": { "type": "integer", "example": 1 },
+                  "quantity":   { "type": "integer", "example": 2, "default": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "დაემატა" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "put": {
+        "tags": ["Cart"],
+        "summary": "რაოდენობის განახლება (0 = წაშლა)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["cart_id", "quantity"],
+                "properties": {
+                  "cart_id":  { "type": "integer", "example": 1 },
+                  "quantity": { "type": "integer", "example": 3 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "განახლდა" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "delete": {
+        "tags": ["Cart"],
+        "summary": "პოზიციის კალათიდან წაშლა",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["cart_id"],
+                "properties": {
+                  "cart_id": { "type": "integer", "example": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "წაიშალა" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/api/orders": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "ჩემი შეკვეთების სია",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": { "description": "შეკვეთები", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["Orders"],
+        "summary": "შეკვეთის გაფორმება (კალათიდან checkout)",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "notes": { "type": "string", "example": "სპეციალური ინსტრუქციები" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "შეკვეთა შეიქმნა", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Order" } } } },
+          "400": { "description": "კალათა ცარიელია ან მარაგი არ არის" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+
+    "/api/orders/{id}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "შეკვეთის დეტალი პოზიციებით",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "შეკვეთა",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    { "$ref": "#/components/schemas/Order" },
+                    { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItem" } } } }
+                  ]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+
+    "/api/admin/products": {
+      "get": {
+        "tags": ["Admin · Products"],
+        "summary": "ყველა პროდუქტი",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "query", "schema": { "type": "integer" }, "description": "ერთი პროდუქტი" },
+          { "name": "q",  "in": "query", "schema": { "type": "string" },  "description": "ძიება" }
+        ],
+        "responses": {
+          "200": { "description": "პროდუქტები" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      },
+      "post": {
+        "tags": ["Admin · Products"],
+        "summary": "პროდუქტის შექმნა",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "price"],
+                "properties": {
+                  "name":        { "type": "string" },
+                  "description": { "type": "string" },
+                  "price":       { "type": "number", "example": 9.99 },
+                  "stock":       { "type": "integer", "example": 100 },
+                  "unit":        { "type": "string", "example": "კგ" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "შეიქმნა", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      },
+      "put": {
+        "tags": ["Admin · Products"],
+        "summary": "პროდუქტის განახლება",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id", "name", "price"],
+                "properties": {
+                  "id":          { "type": "integer" },
+                  "name":        { "type": "string" },
+                  "description": { "type": "string" },
+                  "price":       { "type": "number" },
+                  "stock":       { "type": "integer" },
+                  "unit":        { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "განახლდა", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Admin · Products"],
+        "summary": "პროდუქტის წაშლა",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["id"], "properties": { "id": { "type": "integer" } } } } }
+        },
+        "responses": {
+          "200": { "description": "წაიშალა" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+
+    "/api/admin/orders": {
+      "get": {
+        "tags": ["Admin · Orders"],
+        "summary": "ყველა შეკვეთა",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id",     "in": "query", "schema": { "type": "integer" }, "description": "ერთი შეკვეთა დეტალებით" },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending","processing","shipped","delivered","cancelled"] } }
+        ],
+        "responses": {
+          "200": { "description": "შეკვეთები" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      },
+      "patch": {
+        "tags": ["Admin · Orders"],
+        "summary": "შეკვეთის სტატუსის განახლება",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["order_id", "status"],
+                "properties": {
+                  "order_id": { "type": "integer", "example": 1 },
+                  "status":   { "type": "string", "enum": ["pending","processing","shipped","delivered","cancelled"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "სტატუსი განახლდა" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+
+    "/api/admin/users": {
+      "get": {
+        "tags": ["Admin · Users"],
+        "summary": "მომხმარებლების სია",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "q",  "in": "query", "schema": { "type": "string" }, "description": "ძიება სახელით / ელ-ფოსტით / კომპანიით" }
+        ],
+        "responses": {
+          "200": { "description": "მომხმარებლები", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/User" } } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      },
+      "post": {
+        "tags": ["Admin · Users"],
+        "summary": "მომხმარებლის შექმნა",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name","email","password"],
+                "properties": {
+                  "name":     { "type": "string" },
+                  "email":    { "type": "string", "format": "email" },
+                  "company":  { "type": "string" },
+                  "role":     { "type": "string", "enum": ["admin","customer"], "default": "customer" },
+                  "password": { "type": "string", "minLength": 6 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "შეიქმნა", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/User" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "409": { "description": "ელ-ფოსტა უკვე გამოყენებულია" }
+        }
+      },
+      "put": {
+        "tags": ["Admin · Users"],
+        "summary": "მომხმარებლის განახლება",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["id","name","email"],
+                "properties": {
+                  "id":       { "type": "integer" },
+                  "name":     { "type": "string" },
+                  "email":    { "type": "string", "format": "email" },
+                  "company":  { "type": "string" },
+                  "role":     { "type": "string", "enum": ["admin","customer"] },
+                  "password": { "type": "string", "description": "ცარიელი = არ შეიცვლება" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "განახლდა" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Admin · Users"],
+        "summary": "მომხმარებლის წაშლა",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["id"], "properties": { "id": { "type": "integer" } } } } }
+        },
+        "responses": {
+          "200": { "description": "წაიშალა" },
+          "400": { "description": "საკუთარი ანგარიშის წაშლა შეუძლებელია" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  }
+}

@@ -54,8 +54,11 @@ foreach ($routes as $route) {
 $path = __DIR__ . $uri;
 
 if (is_dir($path)) {
-    $index = rtrim($path, '/\\') . '/index.php';
-    if (file_exists($index)) { require $index; exit; }
+    // Directory: look for index.html first (e.g. /api/docs/), then index.php
+    $htmlIndex = rtrim($path, '/\\') . '/index.html';
+    $phpIndex  = rtrim($path, '/\\') . '/index.php';
+    if (file_exists($htmlIndex)) { return false; } // built-in server serves it
+    if (file_exists($phpIndex))  { require $phpIndex; exit; }
 }
 
 if (str_ends_with($uri, '.php') && file_exists($path)) {

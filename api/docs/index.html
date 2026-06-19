@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OrderSys API Docs</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+  <style>
+    body { margin: 0; background: #fafafa; }
+    .topbar { background: #1a1a2e !important; }
+    .topbar-wrapper img { display: none; }
+    .topbar-wrapper::after {
+      content: '⬡ OrderSys API';
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+    .swagger-ui .info .title { font-size: 2rem; }
+  </style>
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>
+  SwaggerUIBundle({
+    url: '/api/openapi.json',
+    dom_id: '#swagger-ui',
+    presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+    layout: 'BaseLayout',
+    deepLinking: true,
+    displayRequestDuration: true,
+    defaultModelsExpandDepth: 1,
+    defaultModelExpandDepth: 2,
+    tryItOutEnabled: true,
+    requestInterceptor: (req) => {
+      // Auto-add the saved token from localStorage
+      const token = localStorage.getItem('ordersys_token');
+      if (token && !req.headers['Authorization']) {
+        req.headers['Authorization'] = 'Bearer ' + token;
+      }
+      return req;
+    },
+    responseInterceptor: (res) => {
+      // Auto-save token when login succeeds
+      try {
+        const body = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
+        if (body && body.token) {
+          localStorage.setItem('ordersys_token', body.token);
+          console.info('[OrderSys] Token saved to localStorage.');
+        }
+      } catch(e) {}
+      return res;
+    },
+    onComplete: () => {
+      const saved = localStorage.getItem('ordersys_token');
+      if (saved) {
+        // Pre-fill the Authorize modal with the saved token
+        ui.preauthorizeApiKey('BearerAuth', saved);
+        console.info('[OrderSys] Token loaded from localStorage.');
+      }
+    }
+  });
+</script>
+</body>
+</html>
