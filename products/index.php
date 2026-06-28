@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['product_id'])) {
     redirect('/products/index.php' . ($qs ? '?' . $qs : ''));
 }
 
+$banners    = $pdo->query("SELECT * FROM banners WHERE is_active = 1 ORDER BY sort_order, id")->fetchAll();
 $categories = $pdo->query("SELECT * FROM categories ORDER BY name")->fetchAll();
 
 $search    = trim($_GET['q'] ?? '');
@@ -51,6 +52,60 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $products = $stmt->fetchAll();
 ?>
+
+<?php if (!empty($banners)): ?>
+<div id="bannerCarousel" class="carousel slide mb-4 rounded overflow-hidden shadow-sm"
+     data-bs-ride="carousel" data-bs-interval="5000">
+
+    <?php if (count($banners) > 1): ?>
+    <div class="carousel-indicators">
+        <?php foreach ($banners as $i => $b): ?>
+        <button type="button" data-bs-target="#bannerCarousel" data-bs-slide-to="<?= $i ?>"
+                <?= $i === 0 ? 'class="active" aria-current="true"' : '' ?>
+                aria-label="ბანერი <?= $i + 1 ?>"></button>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+
+    <div class="carousel-inner">
+        <?php foreach ($banners as $i => $b): ?>
+        <div class="carousel-item <?= $i === 0 ? 'active' : '' ?>">
+            <?php if ($b['link_url']): ?>
+            <a href="<?= htmlspecialchars($b['link_url']) ?>">
+            <?php endif; ?>
+            <img src="/uploads/banners/<?= htmlspecialchars($b['image']) ?>"
+                 class="d-block w-100"
+                 alt="<?= htmlspecialchars($b['title'] ?? '') ?>"
+                 style="height:clamp(180px,30vw,380px);object-fit:cover">
+            <?php if ($b['link_url']): ?></a><?php endif; ?>
+
+            <?php if ($b['title'] || $b['subtitle']): ?>
+            <div class="carousel-caption d-none d-sm-block text-start"
+                 style="left:1.5rem;right:auto;bottom:1.5rem;max-width:65%">
+                <div class="bg-dark bg-opacity-60 rounded px-3 py-2 d-inline-block">
+                    <?php if ($b['title']): ?>
+                    <h5 class="mb-1 text-white fw-bold"><?= htmlspecialchars($b['title']) ?></h5>
+                    <?php endif; ?>
+                    <?php if ($b['subtitle']): ?>
+                    <p class="mb-0 small text-white-50"><?= htmlspecialchars($b['subtitle']) ?></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php endforeach; ?>
+    </div>
+
+    <?php if (count($banners) > 1): ?>
+    <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+    </button>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0"><i class="bi bi-grid-fill me-2"></i>პროდუქტები</h2>

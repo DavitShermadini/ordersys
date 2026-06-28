@@ -27,6 +27,9 @@ $routes = [
     ['#^/api/categories/(\d+)/?$#',    'api/categories.php',       'id'],
     ['#^/api/categories/?$#',          'api/categories.php'],
 
+    ['#^/api/banners/(\d+)/?$#',       'api/banners.php',          'id'],
+    ['#^/api/banners/?$#',             'api/banners.php'],
+
     ['#^/api/cart/?$#',                'api/cart.php'],
 
     ['#^/api/orders/(\d+)/?$#',        'api/orders.php',           'id'],
@@ -45,7 +48,9 @@ foreach ($routes as $route) {
         if ($param && isset($m[1])) {
             $_GET[$param] = $m[1];
         }
-        require __DIR__ . '/' . $file;
+        $target = __DIR__ . '/' . $file;
+        chdir(dirname($target));
+        require $target;
         exit;
     }
 }
@@ -58,10 +63,11 @@ if (is_dir($path)) {
     $htmlIndex = rtrim($path, '/\\') . '/index.html';
     $phpIndex  = rtrim($path, '/\\') . '/index.php';
     if (file_exists($htmlIndex)) { return false; } // built-in server serves it
-    if (file_exists($phpIndex))  { require $phpIndex; exit; }
+    if (file_exists($phpIndex))  { chdir(rtrim($path, '/\\')); require $phpIndex; exit; }
 }
 
 if (str_ends_with($uri, '.php') && file_exists($path)) {
+    chdir(dirname($path));
     require $path;
     exit;
 }

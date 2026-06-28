@@ -93,6 +93,19 @@
           "adjusted_price": { "type": "number", "nullable": true, "description": "ადმინის მიერ შეცვლილი ფასი" },
           "unit":           { "type": "string" }
         }
+      },
+      "Banner": {
+        "type": "object",
+        "properties": {
+          "id":         { "type": "integer" },
+          "title":      { "type": "string", "nullable": true },
+          "subtitle":   { "type": "string", "nullable": true },
+          "image":      { "type": "string", "description": "ფაილის სახელი — /uploads/banners/{image}" },
+          "link_url":   { "type": "string", "nullable": true },
+          "sort_order": { "type": "integer" },
+          "is_active":  { "type": "integer", "enum": [0, 1] },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
       }
     },
     "responses": {
@@ -119,7 +132,8 @@
     { "name": "Orders",          "description": "შეკვეთები (auth)" },
     { "name": "Admin · Products","description": "პროდუქტების ადმინ-მართვა" },
     { "name": "Admin · Orders",  "description": "შეკვეთების ადმინ-მართვა" },
-    { "name": "Admin · Users",   "description": "მომხმარებლების ადმინ-მართვა" }
+    { "name": "Admin · Users",   "description": "მომხმარებლების ადმინ-მართვა" },
+    { "name": "Banners",         "description": "სლაიდერ ბანერები (GET საჯარო, POST/PUT/PATCH/DELETE admin)" }
   ],
 
   "paths": {
@@ -567,6 +581,136 @@
         },
         "responses": {
           "200": { "description": "სტატუსი განახლდა" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+
+    "/api/banners": {
+      "get": {
+        "tags": ["Banners"],
+        "summary": "ბანერების სია (მხოლოდ ჩართული)",
+        "parameters": [
+          { "name": "all", "in": "query", "schema": { "type": "integer", "enum": [1] }, "description": "?all=1 — გამორთულებიც (admin)" }
+        ],
+        "responses": {
+          "200": {
+            "description": "ბანერები",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Banner" } } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Banners"],
+        "summary": "ბანერის შექმნა (admin) — multipart/form-data",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["image"],
+                "properties": {
+                  "image":      { "type": "string", "format": "binary", "description": "JPG/PNG/WebP/GIF, max 10MB" },
+                  "title":      { "type": "string" },
+                  "subtitle":   { "type": "string" },
+                  "link_url":   { "type": "string" },
+                  "is_active":  { "type": "integer", "enum": [0, 1], "default": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "შეიქმნა", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Banner" } } } },
+          "400": { "description": "ფაილი არ არის ან ფორმატი არასწორია" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" }
+        }
+      }
+    },
+
+    "/api/banners/{id}": {
+      "get": {
+        "tags": ["Banners"],
+        "summary": "ერთი ბანერი",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "ბანერი", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Banner" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Banners"],
+        "summary": "ბანერის ტექსტური ველების განახლება (admin) — JSON",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title":      { "type": "string", "nullable": true },
+                  "subtitle":   { "type": "string", "nullable": true },
+                  "link_url":   { "type": "string", "nullable": true },
+                  "is_active":  { "type": "integer", "enum": [0, 1] },
+                  "sort_order": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "განახლდა", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Banner" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "patch": {
+        "tags": ["Banners"],
+        "summary": "ჩართვა/გამორთვა ან რიგის შეცვლა (admin)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "is_active":  { "type": "integer", "enum": [0, 1] },
+                  "sort_order": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "განახლდა", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Banner" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Banners"],
+        "summary": "ბანერის წაშლა + ფაილის წაშლა (admin)",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "წაიშალა" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" }
