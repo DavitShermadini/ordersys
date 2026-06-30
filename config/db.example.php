@@ -1,8 +1,8 @@
 <?php
 define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'orders_db');
+define('DB_USER', 'your_db_user');
+define('DB_PASS', 'your_db_password');
+define('DB_NAME', 'your_db_name');
 
 // Auto-detect subdirectory prefix (e.g. '' locally, '/Orders' on production)
 $_appDir  = str_replace('\\', '/', dirname(__DIR__));
